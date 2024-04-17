@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mongo1:
+    container_name: mongo1
+    image: mongo:5
+    command: mongod --replSet rs --bind_ip localhost,mongo1 --quiet
+    ports:
+      - "27017:27017"
+    networks:
+      - mongoCluster
+    healthcheck:
+      test: >
+        mongo --host mongo1 --eval
+        '
+        rs.initiate({
+          "_id" : "rs",
+          "members" : [
+            { "_id" : 0, "host" : "mongo1" },
+            { "_id" : 1, "host" : "mongo2" },
+            { "_id" : 2, "host" : "mongo3" }
+          ]
+        });
+        '
+      interval: 1s
+      retries: 10
+      start_period: 10s
+
+
+  mongo2:
+    container_name: mongo2
+    image: mongo:5
+    command: mongod --replSet rs --bind_ip localhost,mongo2 --quiet
+    ports:
+      - "27018:27017"
+    networks:
+      - mongoCluster
+
+  mongo3:
+    container_name: mongo3
+    image: mongo:5
+    command: mongod --replSet rs --bind_ip localhost,mongo3 --quiet
+    ports:
+      - "27019:27017"
+    networks:
+      - mongoCluster
+
+networks:
+  mongoCluster:
+    driver: bridge
+
+volumes:
+  mongo1-data:
+  mongo2-data:
+  mongo3-data:
